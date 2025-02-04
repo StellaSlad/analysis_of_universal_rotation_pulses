@@ -6,6 +6,7 @@ import lib.calculations as c
 import lib.basis as basis
 
 # Parameters
+DIRECTORY = 'pulses/'
 TIMESTEP = 2.0e-6
 IDEAL_AXIS = np.array([1, 0, 0])  # ideal axis
 ANGLE = 90  # ideal angle
@@ -70,6 +71,7 @@ def main():
     """
     Main function to execute the analysis.
     """
+    os.chdir(DIRECTORY)
     ensure_directories()
     pulse_files = get_pulse_filenames()
 
