@@ -1,6 +1,6 @@
 import numpy as np
 
-def create_single_spin_matrices():
+def create_single_spin_matrices() -> dict[str, np.ndarray]:
     """
     Create matrices for a single spin 1/2.
 
@@ -8,17 +8,17 @@ def create_single_spin_matrices():
     dict: Dictionary containing single spin matrices.
     """
     return {
-        "mix": 0.5 * np.array([[0, 1], [1, 0]]),
-        "miy": 0.5 * np.array([[0, -1j], [1j, 0]]),
-        "miz": 0.5 * np.array([[1, 0], [0, -1]]),
-        "mip": np.array([[0, 1], [0, 0]]),
-        "mim": np.array([[0, 0], [1, 0]]),
-        "mia": np.array([[1, 0], [0, 0]]),
-        "mib": np.array([[0, 0], [0, 1]]),
-        "ione": np.array([[1, 0], [0, 1]])
+        "m_ix": 0.5 * np.array([[0, 1], [1, 0]]),
+        "m_iy": 0.5 * np.array([[0, -1j], [1j, 0]]),
+        "m_iz": 0.5 * np.array([[1, 0], [0, -1]]),
+        "m_ip": np.array([[0, 1], [0, 0]]),
+        "m_im": np.array([[0, 0], [1, 0]]),
+        "m_ia": np.array([[1, 0], [0, 0]]),
+        "m_ib": np.array([[0, 0], [0, 1]]),
+        "i_one": np.array([[1, 0], [0, 1]])
     }
 
-def initialize_matrices(norder, nspins):
+def initialize_matrices(norder: int, nspins: int) -> dict[str, np.ndarray]:
     """
     Initialize basis matrices.
 
@@ -29,19 +29,22 @@ def initialize_matrices(norder, nspins):
     Returns:
     dict: Dictionary containing initialized matrices.
     """
+    if norder <= 0 or nspins <= 0:
+        raise ValueError("norder and nspins must be positive integers")
+
     shape = (norder, norder, nspins)
     return {
-        "iu": np.zeros(shape, dtype=complex),
-        "ix": np.zeros(shape, dtype=complex),
-        "iy": np.zeros(shape, dtype=complex),
-        "iz": np.zeros(shape, dtype=complex),
-        "ip": np.zeros(shape, dtype=complex),
-        "im": np.zeros(shape, dtype=complex),
-        "ia": np.zeros(shape, dtype=complex),
-        "ib": np.zeros(shape, dtype=complex)
+        "i_u": np.zeros(shape, dtype=complex),
+        "i_x": np.zeros(shape, dtype=complex),
+        "i_y": np.zeros(shape, dtype=complex),
+        "i_z": np.zeros(shape, dtype=complex),
+        "i_p": np.zeros(shape, dtype=complex),
+        "i_m": np.zeros(shape, dtype=complex),
+        "i_a": np.zeros(shape, dtype=complex),
+        "i_b": np.zeros(shape, dtype=complex)
     }
 
-def create_product_operator_matrices(nspins, matrices):
+def create_product_operator_matrices(nspins: int, matrices: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     """
     Create product operator matrices for each spin.
 
@@ -52,31 +55,31 @@ def create_product_operator_matrices(nspins, matrices):
     Returns:
     dict: Dictionary containing product operator matrices for each spin.
     """
-    ione = matrices["ione"]
+    i_one = matrices["i_one"]
     result = initialize_matrices(2**nspins, nspins)
 
     for ispins in range(nspins):
         dummy_matrices = {
-            "dummy_u": ione, 
-            "dummy_x": matrices["mix"], 
-            "dummy_y": matrices["miy"], 
-            "dummy_z": matrices["miz"],
-            "dummy_p": matrices["mip"], 
-            "dummy_m": matrices["mim"], 
-            "dummy_a": matrices["mia"], 
-            "dummy_b": matrices["mib"]
+            "dummy_u": i_one, 
+            "dummy_x": matrices["m_ix"], 
+            "dummy_y": matrices["m_iy"], 
+            "dummy_z": matrices["m_iz"],
+            "dummy_p": matrices["m_ip"], 
+            "dummy_m": matrices["m_im"], 
+            "dummy_a": matrices["m_ia"], 
+            "dummy_b": matrices["m_ib"]
         }
 
         for j in range(1, nspins):
             for key, value in dummy_matrices.items():
-                dummy_matrices[key] = np.kron(value, ione) if j >= ispins else np.kron(ione, value)
+                dummy_matrices[key] = np.kron(value, i_one) if j >= ispins else np.kron(i_one, value)
 
         for key, value in dummy_matrices.items():
-            result[key.replace("dummy_", "")][:, :, ispins] = value
+            result[key.replace("dummy_", "i_")][:, :, ispins] = value
 
     return result
 
-def basis(nspins):
+def basis(nspins: int) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, int]:
     """
     Generates basis matrices for a given number of spins.
 
@@ -92,6 +95,6 @@ def basis(nspins):
     product_matrices = create_product_operator_matrices(nspins, matrices)
     norder = 2 ** nspins
 
-    return (product_matrices["iu"], product_matrices["ix"], product_matrices["iy"], 
-            product_matrices["iz"], product_matrices["ip"], product_matrices["im"], 
-            product_matrices["ia"], product_matrices["ib"], norder)
+    return (product_matrices["i_u"], product_matrices["i_x"], product_matrices["i_y"], 
+            product_matrices["i_z"], product_matrices["i_p"], product_matrices["i_m"], 
+            product_matrices["i_a"], product_matrices["i_b"], norder)
