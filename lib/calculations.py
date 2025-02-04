@@ -1,240 +1,240 @@
-# Example usage:
-# rot_axis('your_file_name', np.linspace(-132000 / 2, 132000 / 2, 551), 551)
-
 import numpy as np
-import scipy.linalg as scla
 import pandas as pd
+import scipy.linalg as scla
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
-def basis(nspins):
-    # Matrices for single spin 1/2
-    mix = 0.5 * np.array([[0, 1], [1, 0]])
-    miy = 0.5 * np.array([[0, -1j], [1j, 0]])
-    miz = 0.5 * np.array([[1, 0], [0, -1]])
-    mip = np.array([[0, 1], [0, 0]])
-    mim = np.array([[0, 0], [1, 0]])
-    mia = np.array([[1, 0], [0, 0]])
-    mib = np.array([[0, 0], [0, 1]])
-    ione = np.array([[1, 0], [0, 1]])
+from lib.basis import basis
 
-    # Initializations
-    norder = 2**nspins
-    iu = np.zeros((norder, norder, nspins), dtype=complex)
-    ix = np.zeros((norder, norder, nspins), dtype=complex)
-    iy = np.zeros((norder, norder, nspins), dtype=complex)
-    iz = np.zeros((norder, norder, nspins), dtype=complex)
-    ip = np.zeros((norder, norder, nspins), dtype=complex)
-    im = np.zeros((norder, norder, nspins), dtype=complex)
-    ia = np.zeros((norder, norder, nspins), dtype=complex)
-    ib = np.zeros((norder, norder, nspins), dtype=complex)
+def read_pulse_file(name: str) -> tuple[np.ndarray, np.ndarray, float]:
+    """
+    Read the shaped pulse file.
 
-    # Creation of product operator matrices
-    for ispins in range(1, nspins + 1):
-        dummy_u = ione
-        dummy_x = mix
-        dummy_y = miy
-        dummy_z = miz
-        dummy_p = mip
-        dummy_m = mim
-        dummy_a = mia
-        dummy_b = mib
+    Parameters:
+    name (str): The name of the file.
 
-        for j in range(2, nspins + 1):
-            if j > ispins:
-                dummy_u = np.kron(dummy_u, ione)
-                dummy_x = np.kron(dummy_x, ione)
-                dummy_y = np.kron(dummy_y, ione)
-                dummy_z = np.kron(dummy_z, ione)
-                dummy_p = np.kron(dummy_p, ione)
-                dummy_m = np.kron(dummy_m, ione)
-                dummy_a = np.kron(dummy_a, ione)
-                dummy_b = np.kron(dummy_b, ione)
-            else:
-                dummy_u = np.kron(ione, dummy_u)
-                dummy_x = np.kron(ione, dummy_x)
-                dummy_y = np.kron(ione, dummy_y)
-                dummy_z = np.kron(ione, dummy_z)
-                dummy_p = np.kron(ione, dummy_p)
-                dummy_m = np.kron(ione, dummy_m)
-                dummy_a = np.kron(ione, dummy_a)
-                dummy_b = np.kron(ione, dummy_b)
-
-        iu[:, :, ispins - 1] = dummy_u
-        ix[:, :, ispins - 1] = dummy_x
-        iy[:, :, ispins - 1] = dummy_y
-        iz[:, :, ispins - 1] = dummy_z
-        ip[:, :, ispins - 1] = dummy_p
-        im[:, :, ispins - 1] = dummy_m
-        ia[:, :, ispins - 1] = dummy_a
-        ib[:, :, ispins - 1] = dummy_b
-
-    return iu, ix, iy, iz, ip, im, ia, ib, norder
-
-def calculate_effective_propagator(name, offsrange, n_offsets):
-    # spin system initialization
-    nspins = 1
-    iu, ix, iy, iz, ip, im, ia, ib, norder = basis(nspins)
-
-    # read shaped pulse
+    Returns:
+    tuple: x_amp, y_amp, timestep
+    """
     pulse = pd.read_table(name, skiprows=4, header=None, names=['Var1', 'Var2', 'Var3'], sep='\s+')
     x_amp = pulse['Var1'].astype(float).values
     y_amp = pulse['Var2'].astype(float).values
     timestep = float(pulse['Var3'][0])
-    # alternativ: timestep = pulse['Var3'].astype(float).iloc[0]
+    return x_amp, y_amp, timestep
 
-    # offset grid
-    offsets = np.linspace(-offsrange/2, offsrange/2, n_offsets)
+def calculate_time_propagator(timestep: float, Hevo: np.ndarray) -> np.ndarray:
+    """
+    Calculate the time propagator.
 
-    # initial state
+    Parameters:
+    timestep (float): The time step.
+    Hevo (np.ndarray): The Hamiltonian.
+
+    Returns:
+    np.ndarray: The time propagator.
+    """
+    return scla.expm(-1j * timestep * Hevo)
+
+def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
+    """
+    Calculate the effective propagator for a given shaped pulse file over a range of offsets.
+
+    This function performs the following steps:
+    1. Initializes the spin system.
+    2. Reads the shaped pulse file to obtain the pulse amplitudes and timestep.
+    3. Creates an offset grid based on the specified range and number of offsets.
+    4. Initializes the initial state and preallocates space for the results.
+    5. Loops over the offset grid to calculate the effective propagator at each offset.
+    6. For each offset, loops over the time grid to propagate the state using the time propagator.
+    7. Concatenates the results and saves them to a file.
+
+    Parameters:
+    name (str): The name of the file.
+    offsrange (float): The offset range.
+    n_offsets (int): The number of offsets.
+
+    Returns:
+    None
+    """
+    nspins = 1
+    _, ix, iy, iz, _, _, _, _, _ = basis(nspins)
+
+    x_amp, y_amp, timestep = read_pulse_file(name)
+    offsets = np.linspace(-offsrange / 2, offsrange / 2, n_offsets)
     rhoinit = iz[:, :, 0]
-
-    # number of time steps
     nsteps = len(x_amp)
-
-    # preallocate space for results
     U_eff = np.eye(2)
 
-    # loop over the offset grid
     for n in range(n_offsets):
-        # initialize rho at t=0
         rho = rhoinit
-        # chemical shift hamiltonian
         Hcs = 2 * np.pi * offsets[n] * iz[:, :, 0]
-
-        # initial U_eff is the identity matrix
         U_eff_dummy = np.eye(2)
 
-        # loop over time grid
         for k in range(nsteps):
-            # grab the pulse amplitudes and set the control hamiltonian
             Hrf = 2 * np.pi * (x_amp[k] * ix[:, :, 0] + y_amp[k] * iy[:, :, 0])
-
-            # set the total hamiltonian
             Hevo = Hcs + Hrf
-
-            # calculate the time propagator
-            uevo = scla.expm(-1j * timestep * Hevo)
-
-            # use the time propagator to propagate the current state
+            uevo = calculate_time_propagator(timestep, Hevo)
             rho = np.dot(uevo, np.dot(rho, np.conj(uevo).T))
-
-            # save the projections into the dummy variables
             U_eff_dummy = np.dot(U_eff_dummy, uevo)
 
-        # grab the trajectory at the current offset point
         U_eff = np.concatenate((U_eff, U_eff_dummy), axis=1)
 
     np.savetxt(f'figures/offset/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
 
-def final_states(name, n_offsets):
-    nspins = 1
-    iu, ix, iy, iz, ip, im, ia, ib, norder = basis(nspins)
+def transfer_function(rho: np.ndarray, operator: np.ndarray) -> float:
+    """
+    Calculate the transfer function component.
 
-    U = np.loadtxt(f'figures/offset/{name}_u.txt',dtype=np.complex128)
+    Parameters:
+    rho (np.ndarray): The density matrix.
+    operator (np.ndarray): The operator matrix.
+
+    Returns:
+    float: The transfer function component.
+    """
+    return np.real(np.trace(np.dot(np.conj(rho).T, operator)) / np.trace(np.dot(operator, operator)))
+
+def final_states(name: str, n_offsets: int):
+    """
+    Calculate the final states for a given shaped pulse file over a range of offsets.
+
+    Parameters:
+    name (str): The name of the file.
+    n_offsets (int): The number of offsets.
+
+    Returns:
+    None
+    """
+    nspins = 1
+    _, ix, iy, iz, _, _, _, _, _ = basis(nspins)
+
+    U = np.loadtxt(f'figures/offset/{name}_u.txt', dtype=np.complex128)
     
-    Mxx, Mxy, Mxz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
-    Myx, Myy, Myz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
-    Mzx, Mzy, Mzz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
+    M_xx, M_xy, M_xz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
+    M_yx, M_yy, M_yz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
+    M_zx, M_zy, M_zz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
 
     for i in range(n_offsets):
-        # Extracting the U_eff for the offset i
-        U_eff = U[0:2, 2*i:2*i+2]
+        U_eff = U[0:2, 2 * i:2 * i + 2]
 
-        # Propagation of the initial state ix
-        rhox = np.dot(np.dot(U_eff, ix[:, :, 0]), np.conj(U_eff).T)
-        rhoy = np.dot(np.dot(U_eff, iy[:, :, 0]), np.conj(U_eff).T)
-        rhoz = np.dot(np.dot(U_eff, iz[:, :, 0]), np.conj(U_eff).T)
+        rho_x = np.dot(np.dot(U_eff, ix[:, :, 0]), np.conj(U_eff).T)
+        rho_y = np.dot(np.dot(U_eff, iy[:, :, 0]), np.conj(U_eff).T)
+        rho_z = np.dot(np.dot(U_eff, iz[:, :, 0]), np.conj(U_eff).T)
 
-        # Normalized final magnetization components
-        Mxx[i] = np.real(np.trace(np.dot(np.conj(rhox).T, ix[:, :, 0])) / np.trace(np.dot(ix[:, :, 0], ix[:, :, 0])))
-        Mxy[i] = np.real(np.trace(np.dot(np.conj(rhox).T, iy[:, :, 0])) / np.trace(np.dot(iy[:, :, 0], iy[:, :, 0])))
-        Mxz[i] = np.real(np.trace(np.dot(np.conj(rhox).T, iz[:, :, 0])) / np.trace(np.dot(iz[:, :, 0], iz[:, :, 0])))
+        M_xx[i] = transfer_function(rho_x, ix[:, :, 0])
+        M_xy[i] = transfer_function(rho_x, iy[:, :, 0])
+        M_xz[i] = transfer_function(rho_x, iz[:, :, 0])
 
-        Myx[i] = np.real(np.trace(np.dot(np.conj(rhoy).T, ix[:, :, 0])) / np.trace(np.dot(ix[:, :, 0], ix[:, :, 0])))
-        Myy[i] = np.real(np.trace(np.dot(np.conj(rhoy).T, iy[:, :, 0])) / np.trace(np.dot(iy[:, :, 0], iy[:, :, 0])))
-        Myz[i] = np.real(np.trace(np.dot(np.conj(rhoy).T, iz[:, :, 0])) / np.trace(np.dot(iz[:, :, 0], iz[:, :, 0])))
+        M_yx[i] = transfer_function(rho_y, ix[:, :, 0])
+        M_yy[i] = transfer_function(rho_y, iy[:, :, 0])
+        M_yz[i] = transfer_function(rho_y, iz[:, :, 0])
 
-        Mzx[i] = np.real(np.trace(np.dot(np.conj(rhoz).T, ix[:, :, 0])) / np.trace(np.dot(ix[:, :, 0], ix[:, :, 0])))
-        Mzy[i] = np.real(np.trace(np.dot(np.conj(rhoz).T, iy[:, :, 0])) / np.trace(np.dot(iy[:, :, 0], iy[:, :, 0])))
-        Mzz[i] = np.real(np.trace(np.dot(np.conj(rhoz).T, iz[:, :, 0])) / np.trace(np.dot(iz[:, :, 0], iz[:, :, 0])))
+        M_zx[i] = transfer_function(rho_z, ix[:, :, 0])
+        M_zy[i] = transfer_function(rho_z, iy[:, :, 0])
+        M_zz[i] = transfer_function(rho_z, iz[:, :, 0])
 
-    M = np.column_stack((Mxx, Mxy, Mxz, Myx, Myy, Myz, Mzx, Mzy, Mzz))
+    M = np.column_stack((M_xx, M_xy, M_xz, M_yx, M_yy, M_yz, M_zx, M_zy, M_zz))
     np.savetxt(f'figures/offset/{name}_results.txt', M, delimiter='\t', fmt='%.6f')
 
-def calculate_quality_factor(name, n_offsets, desired_propagator):
-    
-    U = np.loadtxt(f'figures/offset/{name}_u.txt',dtype=np.complex128)
+def calculate_quality_factor(name: str, n_offsets: int, desired_propagator: np.ndarray):
+    """
+    Calculate the quality factor for a given shaped pulse file over a range of offsets.
+
+    Parameters:
+    name (str): The name of the file.
+    n_offsets (int): The number of offsets.
+    desired_propagator (np.ndarray): The desired propagator.
+
+    Returns:
+    None
+    """
+    U = np.loadtxt(f'figures/offset/{name}_u.txt', dtype=np.complex128)
 
     transfer_efficiency = np.zeros(n_offsets + 1)
     for i in range(n_offsets):
-        # Calculating the elements a and b
-        effective_propagator = U[0:2, 2*i:2*i+2]
-        # Extracting real and imaginary parts A, B, C, D
+        effective_propagator = U[0:2, 2 * i:2 * i + 2]
         transfer_efficiency[i] = np.trace(np.conj(desired_propagator).T @ effective_propagator)
     
     transfer_efficiency[n_offsets] = np.sum(transfer_efficiency) / n_offsets
     np.savetxt(f'figures/offset/{name}_te.txt', transfer_efficiency, delimiter='\t', fmt='%.6f')
 
-def calculate_rotation_axis(name, offsets, n_offsets):
-    # Read the file containing unitary rotation for different offsets
-    U = np.loadtxt(f'figures/offset/{name}_u.txt',dtype=np.complex128)
+def calculate_rotation_axis(name: str, offsets: np.ndarray, n_offsets: int):
+    """
+    Calculate the rotation axis for a given shaped pulse file over a range of offsets.
 
-    # Calculate elements a and b
+    Parameters:
+    name (str): The name of the file.
+    offsets (np.ndarray): Array of offset values.
+    n_offsets (int): The number of offsets.
+
+    Returns:
+    None
+    """
+    U = np.loadtxt(f'figures/offset/{name}_u.txt', dtype=np.complex128)
+
     a = U[0, 0::2]
     b = U[0, 1::2]
 
-    # Extracting real and imaginary parts A, B, C, D
     A = np.imag(b)
     B = np.real(b)
     C = np.imag(a)
     D = np.real(a)
 
-    # Calculate half of the rotation angle omega (or omega/2)
-    # Then, directional cosines are calculated - Lxx, Lyy, Lzz
     omega_half = np.arccos(D)
     S = np.sin(omega_half)
 
-    # Directional cosines
     Lxx_new = A / S
     Lyy_new = B / S
     Lzz_new = C / S
 
-    # Rotation vector
     rx_new = 2 * omega_half * Lxx_new
     ry_new = 2 * omega_half * Lyy_new
     rz_new = 2 * omega_half * Lzz_new
 
-    # Save everything to lists
-    Lxx, Lyy, Lzz, rx, ry, rz = [], [], [], [], [], []
-
-    for i in range(n_offsets):
-        Lxx.append(Lxx_new[i])
-        Lyy.append(Lyy_new[i])
-        Lzz.append(Lzz_new[i])
-        rx.append(rx_new[i])
-        ry.append(ry_new[i])
-        rz.append(rz_new[i])
+    Lxx, Lyy, Lzz, rx, ry, rz = Lxx_new.tolist(), Lyy_new.tolist(), Lzz_new.tolist(), rx_new.tolist(), ry_new.tolist(), rz_new.tolist()
 
     axis = np.column_stack((Lxx, Lyy, Lzz))
     np.savetxt(f'figures/rotation_axis/{name}_axis.txt', axis, delimiter='\t', fmt='%.6f')
 
-    # Plotting
-    l = ['-', '--', '-.']  # line style
-    li = [str(x) + 'k' for x in l]
+    plot_rotation_axis(name, offsets, rx, ry, rz, Lxx, Lyy, Lzz)
+
+def plot_rotation_axis(name: str, offsets: np.ndarray, rx: list, ry: list, rz: list, Lxx: list, Lyy: list, Lzz: list):
+    """
+    Plot the rotation axis and save the plot to a file.
+
+    Parameters:
+    name (str): The name of the file.
+    offsets (np.ndarray): Array of offset values.
+    rx (list): Rotation vector x components.
+    ry (list): Rotation vector y components.
+    rz (list): Rotation vector z components.
+    Lxx (list): Directional cosines x components.
+    Lyy (list): Directional cosines y components.
+    Lzz (list): Directional cosines z components.
+
+    Returns:
+    None
+    """
+    line_styles = ['-', '--', '-.']
+    colors = [
+        [0.32, 0.9, 0.8],
+        [0.1, 0.6, 0.52],
+        'k'
+    ]
+    labels = ['r_x', 'r_y', 'r_z']
 
     fig = plt.figure(figsize=(10.5, 16))
 
     ax1 = fig.add_subplot(211)
-    ax1.plot(offsets / 1000, rx, li[0], color=[0.32, 0.9, 0.8], linewidth=1.2, label='r_x')
-    ax1.plot(offsets / 1000, ry, li[1], color=[0.1, 0.6, 0.52], linewidth=1.2, label='r_y')
-    ax1.plot(offsets / 1000, rz, li[2], color='k', linewidth=1.2, label='r_z')
+    ax1.plot(offsets / 1000, rx, line_styles[0], color=colors[0], linewidth=1.2, label=labels[0])
+    ax1.plot(offsets / 1000, ry, line_styles[1], color=colors[1], linewidth=1.2, label=labels[1])
+    ax1.plot(offsets / 1000, rz, line_styles[2], color=colors[2], linewidth=1.2, label=labels[2])
     ax1.set_xlabel('Offset [kHz]', fontsize=14, fontweight='bold')
     ax1.set_ylabel('Rotation vector', fontsize=14, fontweight='bold')
     ax1.legend(loc='center left', fontsize=14)
 
     ax2 = fig.add_subplot(212, projection='3d')
-    for i in range(n_offsets):
+    for i in range(len(Lxx)):
         ax2.quiver(0, 0, 0, Lxx[i], Lyy[i], Lzz[i], color=[0.12, 0.7, 0.6], linewidth=0.5)
 
     ax2.set_xlabel('x', fontsize=14, fontweight='bold')
@@ -244,5 +244,5 @@ def calculate_rotation_axis(name, offsets, n_offsets):
     ax2.set_ylim([-1, 1])
     ax2.set_zlim([-1, 1])
     ax2.grid(True, which='minor')
-    
+
     plt.savefig(f'figures/rotation_axis/axis_{name}.pdf')
