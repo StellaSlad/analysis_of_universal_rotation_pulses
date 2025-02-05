@@ -19,7 +19,7 @@ def ensure_directories():
     """
     Ensure that necessary directories exist.
     """
-    dirs = ['figures', 'figures/rotation_axis', 'figures/offset']
+    dirs = ['txt', 'images', 'images/rotation_axis', 'images/transfer_efficiency']
     for directory in dirs:
         if not os.path.exists(directory):
             os.makedirs(directory)
@@ -34,15 +34,16 @@ def main():
     """
     Main function to execute the analysis.
     """
-    os.chdir(DIRECTORY)
     ensure_directories()
+    os.chdir(DIRECTORY)
     pulse_files = get_pulse_filenames()
 
     for file_name in pulse_files:
         c.calculate_effective_propagator(file_name, OFFSRANGE, N_OFFSETS)
-        c.calculate_rotation_axis(file_name, OFFSETS, N_OFFSETS)
+        Lxx, Lyy, Lzz, rx, ry, rz = c.calculate_rotation_axis(file_name, OFFSETS, N_OFFSETS)
+        pf.plot_rotation_axis(file_name, OFFSETS, rx, ry, rz, Lxx, Lyy, Lzz)
         c.calculate_final_states(file_name, N_OFFSETS)
-        pf.plot_transfer_efficiency2(file_name, OFFSETS)
+        pf.plot_transfer_efficiency(file_name, OFFSETS)
         c.calculate_quality_factor(file_name, N_OFFSETS, U_DESIRED)
 
 if __name__ == "__main__":

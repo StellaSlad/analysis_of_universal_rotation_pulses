@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 def plot_transfer_efficiency(name: str, offsets: np.ndarray):
     """
     Plot the transfer efficiency results of the analysis.
@@ -22,7 +26,7 @@ def plot_transfer_efficiency(name: str, offsets: np.ndarray):
         ['z→x', 'z→y', 'z→z']
     ]
 
-    M = np.loadtxt(f'figures/offset/{name}_results.txt')
+    M = np.loadtxt(f'txt/{name}_results.txt')
 
     fig, axs = plt.subplots(1, 3, figsize=(17.32, 6.14))  # 44 cm x 7.8 cm
 
@@ -39,10 +43,12 @@ def plot_transfer_efficiency(name: str, offsets: np.ndarray):
         axs[i].tick_params(axis='both', which='major', labelsize=14, direction='out')
 
     plt.tight_layout()
-    plt.savefig(f'figures/offset/te_plot_{name}.jpg')
-    plt.savefig(f'figures/offset/te_plot_{name}.pdf')
-    plt.savefig(f'figures/offset/te_plot_{name}.png')
+    plt.savefig(f'images/transfer_efficiency/M_plot_{name}.jpg')
+    plt.savefig(f'images/transfer_efficiency/M_plot_{name}.pdf')
     plt.show()
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def plot_rotation_axis(name: str, offsets: np.ndarray, rx: list, ry: list, rz: list, Lxx: list, Lyy: list, Lzz: list):
     """
@@ -91,7 +97,8 @@ def plot_rotation_axis(name: str, offsets: np.ndarray, rx: list, ry: list, rz: l
     ax2.set_zlim([-1, 1])
     ax2.grid(True, which='minor')
 
-    plt.savefig(f'figures/rotation_axis/rot_axis_{name}.pdf')
+    plt.savefig(f'images/rotation_axis/axis_{name}.jpg')
+    plt.savefig(f'images/rotation_axis/axis_{name}.pdf')
     plt.show()
 
 def plot_transfer_efficiency2(name, offsets):

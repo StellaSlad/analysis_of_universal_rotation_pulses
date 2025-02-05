@@ -79,7 +79,7 @@ def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
 
         U_eff = np.concatenate((U_eff, U_eff_dummy), axis=1)
 
-    np.savetxt(f'figures/offset/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
+    np.savetxt(f'../txt/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
 
 def calculate_transfer_function(rho: np.ndarray, operator: np.ndarray) -> float:
     """
@@ -134,7 +134,7 @@ def calculate_final_states(name: str, n_offsets: int):
         M_zz[i] = calculate_transfer_function(rho_z, iz[:, :, 0])
 
     M = np.column_stack((M_xx, M_xy, M_xz, M_yx, M_yy, M_yz, M_zx, M_zy, M_zz))
-    np.savetxt(f'figures/offset/{name}_results.txt', M, delimiter='\t', fmt='%.6f')
+    np.savetxt(f'../txt/{name}_results.txt', M, delimiter='\t', fmt='%.6f')
 
 def calculate_quality_factor(name: str, n_offsets: int, desired_propagator: np.ndarray):
     """
@@ -156,7 +156,7 @@ def calculate_quality_factor(name: str, n_offsets: int, desired_propagator: np.n
         transfer_efficiency[i] = np.trace(np.conj(desired_propagator).T @ effective_propagator)
     
     transfer_efficiency[n_offsets] = np.sum(transfer_efficiency) / n_offsets
-    np.savetxt(f'figures/offset/{name}_te.txt', transfer_efficiency, delimiter='\t', fmt='%.6f')
+    np.savetxt(f'../txt/quality_factor_{name}.txt', transfer_efficiency, delimiter='\t', fmt='%.6f')
 
 def calculate_rotation_axis(name: str, offsets: np.ndarray, n_offsets: int):
     """
@@ -194,7 +194,7 @@ def calculate_rotation_axis(name: str, offsets: np.ndarray, n_offsets: int):
     Lxx, Lyy, Lzz, rx, ry, rz = Lxx_new.tolist(), Lyy_new.tolist(), Lzz_new.tolist(), rx_new.tolist(), ry_new.tolist(), rz_new.tolist()
 
     axis = np.column_stack((Lxx, Lyy, Lzz))
-    np.savetxt(f'figures/rotation_axis/{name}_axis.txt', axis, delimiter='\t', fmt='%.6f')
+    np.savetxt(f'../txt/{name}_axis.txt', axis, delimiter='\t', fmt='%.6f')
 
 # def plot_rotation_axis(name: str, offsets: np.ndarray, rx: list, ry: list, rz: list, Lxx: list, Lyy: list, Lzz: list):
 #     """
