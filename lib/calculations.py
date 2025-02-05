@@ -81,7 +81,7 @@ def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
 
     np.savetxt(f'figures/offset/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
 
-def transfer_function(rho: np.ndarray, operator: np.ndarray) -> float:
+def calculate_transfer_function(rho: np.ndarray, operator: np.ndarray) -> float:
     """
     Calculate the transfer function component.
 
@@ -94,7 +94,7 @@ def transfer_function(rho: np.ndarray, operator: np.ndarray) -> float:
     """
     return np.real(np.trace(np.dot(np.conj(rho).T, operator)) / np.trace(np.dot(operator, operator)))
 
-def final_states(name: str, n_offsets: int):
+def calculate_final_states(name: str, n_offsets: int):
     """
     Calculate the final states for a given shaped pulse file over a range of offsets.
 
@@ -121,17 +121,17 @@ def final_states(name: str, n_offsets: int):
         rho_y = np.dot(np.dot(U_eff, iy[:, :, 0]), np.conj(U_eff).T)
         rho_z = np.dot(np.dot(U_eff, iz[:, :, 0]), np.conj(U_eff).T)
 
-        M_xx[i] = transfer_function(rho_x, ix[:, :, 0])
-        M_xy[i] = transfer_function(rho_x, iy[:, :, 0])
-        M_xz[i] = transfer_function(rho_x, iz[:, :, 0])
+        M_xx[i] = calculate_transfer_function(rho_x, ix[:, :, 0])
+        M_xy[i] = calculate_transfer_function(rho_x, iy[:, :, 0])
+        M_xz[i] = calculate_transfer_function(rho_x, iz[:, :, 0])
 
-        M_yx[i] = transfer_function(rho_y, ix[:, :, 0])
-        M_yy[i] = transfer_function(rho_y, iy[:, :, 0])
-        M_yz[i] = transfer_function(rho_y, iz[:, :, 0])
+        M_yx[i] = calculate_transfer_function(rho_y, ix[:, :, 0])
+        M_yy[i] = calculate_transfer_function(rho_y, iy[:, :, 0])
+        M_yz[i] = calculate_transfer_function(rho_y, iz[:, :, 0])
 
-        M_zx[i] = transfer_function(rho_z, ix[:, :, 0])
-        M_zy[i] = transfer_function(rho_z, iy[:, :, 0])
-        M_zz[i] = transfer_function(rho_z, iz[:, :, 0])
+        M_zx[i] = calculate_transfer_function(rho_z, ix[:, :, 0])
+        M_zy[i] = calculate_transfer_function(rho_z, iy[:, :, 0])
+        M_zz[i] = calculate_transfer_function(rho_z, iz[:, :, 0])
 
     M = np.column_stack((M_xx, M_xy, M_xz, M_yx, M_yy, M_yz, M_zx, M_zy, M_zz))
     np.savetxt(f'figures/offset/{name}_results.txt', M, delimiter='\t', fmt='%.6f')
@@ -196,53 +196,51 @@ def calculate_rotation_axis(name: str, offsets: np.ndarray, n_offsets: int):
     axis = np.column_stack((Lxx, Lyy, Lzz))
     np.savetxt(f'figures/rotation_axis/{name}_axis.txt', axis, delimiter='\t', fmt='%.6f')
 
-    plot_rotation_axis(name, offsets, rx, ry, rz, Lxx, Lyy, Lzz)
+# def plot_rotation_axis(name: str, offsets: np.ndarray, rx: list, ry: list, rz: list, Lxx: list, Lyy: list, Lzz: list):
+#     """
+#     Plot the rotation axis and save the plot to a file.
 
-def plot_rotation_axis(name: str, offsets: np.ndarray, rx: list, ry: list, rz: list, Lxx: list, Lyy: list, Lzz: list):
-    """
-    Plot the rotation axis and save the plot to a file.
+#     Parameters:
+#     name (str): The name of the file.
+#     offsets (np.ndarray): Array of offset values.
+#     rx (list): Rotation vector x components.
+#     ry (list): Rotation vector y components.
+#     rz (list): Rotation vector z components.
+#     Lxx (list): Directional cosines x components.
+#     Lyy (list): Directional cosines y components.
+#     Lzz (list): Directional cosines z components.
 
-    Parameters:
-    name (str): The name of the file.
-    offsets (np.ndarray): Array of offset values.
-    rx (list): Rotation vector x components.
-    ry (list): Rotation vector y components.
-    rz (list): Rotation vector z components.
-    Lxx (list): Directional cosines x components.
-    Lyy (list): Directional cosines y components.
-    Lzz (list): Directional cosines z components.
+#     Returns:
+#     None
+#     """
+#     line_styles = ['-', '--', '-.']
+#     colors = [
+#         [0.32, 0.9, 0.8],
+#         [0.1, 0.6, 0.52],
+#         'k'
+#     ]
+#     labels = ['r_x', 'r_y', 'r_z']
 
-    Returns:
-    None
-    """
-    line_styles = ['-', '--', '-.']
-    colors = [
-        [0.32, 0.9, 0.8],
-        [0.1, 0.6, 0.52],
-        'k'
-    ]
-    labels = ['r_x', 'r_y', 'r_z']
+#     fig = plt.figure(figsize=(10.5, 16))
 
-    fig = plt.figure(figsize=(10.5, 16))
+#     ax1 = fig.add_subplot(211)
+#     ax1.plot(offsets / 1000, rx, line_styles[0], color=colors[0], linewidth=1.2, label=labels[0])
+#     ax1.plot(offsets / 1000, ry, line_styles[1], color=colors[1], linewidth=1.2, label=labels[1])
+#     ax1.plot(offsets / 1000, rz, line_styles[2], color=colors[2], linewidth=1.2, label=labels[2])
+#     ax1.set_xlabel('Offset [kHz]', fontsize=14, fontweight='bold')
+#     ax1.set_ylabel('Rotation vector', fontsize=14, fontweight='bold')
+#     ax1.legend(loc='center left', fontsize=14)
 
-    ax1 = fig.add_subplot(211)
-    ax1.plot(offsets / 1000, rx, line_styles[0], color=colors[0], linewidth=1.2, label=labels[0])
-    ax1.plot(offsets / 1000, ry, line_styles[1], color=colors[1], linewidth=1.2, label=labels[1])
-    ax1.plot(offsets / 1000, rz, line_styles[2], color=colors[2], linewidth=1.2, label=labels[2])
-    ax1.set_xlabel('Offset [kHz]', fontsize=14, fontweight='bold')
-    ax1.set_ylabel('Rotation vector', fontsize=14, fontweight='bold')
-    ax1.legend(loc='center left', fontsize=14)
+#     ax2 = fig.add_subplot(212, projection='3d')
+#     for i in range(len(Lxx)):
+#         ax2.quiver(0, 0, 0, Lxx[i], Lyy[i], Lzz[i], color=[0.12, 0.7, 0.6], linewidth=0.5)
 
-    ax2 = fig.add_subplot(212, projection='3d')
-    for i in range(len(Lxx)):
-        ax2.quiver(0, 0, 0, Lxx[i], Lyy[i], Lzz[i], color=[0.12, 0.7, 0.6], linewidth=0.5)
+#     ax2.set_xlabel('x', fontsize=14, fontweight='bold')
+#     ax2.set_ylabel('y', fontsize=14, fontweight='bold')
+#     ax2.set_zlabel('z', fontsize=14, fontweight='bold')
+#     ax2.set_xlim([-1, 1])
+#     ax2.set_ylim([-1, 1])
+#     ax2.set_zlim([-1, 1])
+#     ax2.grid(True, which='minor')
 
-    ax2.set_xlabel('x', fontsize=14, fontweight='bold')
-    ax2.set_ylabel('y', fontsize=14, fontweight='bold')
-    ax2.set_zlabel('z', fontsize=14, fontweight='bold')
-    ax2.set_xlim([-1, 1])
-    ax2.set_ylim([-1, 1])
-    ax2.set_zlim([-1, 1])
-    ax2.grid(True, which='minor')
-
-    plt.savefig(f'figures/rotation_axis/axis_{name}.pdf')
+#     plt.savefig(f'figures/rotation_axis/axis_{name}.pdf')
