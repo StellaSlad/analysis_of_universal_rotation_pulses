@@ -9,8 +9,6 @@ The script will analyze all pulses in the DIRECTORY specified.
 A sample input file showing our pulse format is available. 
 It is important not to store any other file types in the same directory!
 
-
-main.py:
 ## main.py
 
 The `main.py` module serves as the entry point for running the quantum simulation and analysis tasks. It sets up the necessary parameters, ensures required directories exist, retrieves pulse filenames, and plots the results of the analysis.
@@ -27,7 +25,7 @@ The `main.py` module serves as the entry point for running the quantum simulatio
 - **Main Execution**:
   - The `main()` function orchestrates the execution of the simulation and analysis tasks. It ensures directories exist, retrieves pulse filenames, and iterates over each pulse file to perform calculations and plot results.
 
-lib/basis.py:
+## basis.py:
 
 The `basis.py` module is responsible for generating the basis matrices for a given number of spins in a quantum system. It provides functions to create single spin matrices and product operator matrices for multiple spins. These matrices are essential for simulating and analyzing quantum systems, particularly in the context of NMR (Nuclear Magnetic Resonance) and quantum computing.
 
@@ -52,8 +50,6 @@ from lib.basis import basis
 
 # Generate basis matrices for a 2-spin system
 iu, ix, iy, iz, ip, im, ia, ib, norder = basis(2)
-
-lib/calculations.py:
 
 ## calculations.py
 
