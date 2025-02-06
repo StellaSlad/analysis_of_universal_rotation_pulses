@@ -35,6 +35,8 @@ def calculate_time_propagator(timestep: float, Hevo: np.ndarray) -> np.ndarray:
     """
     return scla.expm(-1j * timestep * Hevo)
 
+import numpy as np
+
 def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
     """
     Calculate the effective propagator for a given shaped pulse file over a range of offsets.
@@ -61,25 +63,125 @@ def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
 
     x_amp, y_amp, timestep = read_pulse_file(name)
     offsets = np.linspace(-offsrange / 2, offsrange / 2, n_offsets)
+    print(f"Offsets shape: {offsets.shape}")  # Debug statement to check offsets
     rhoinit = iz[:, :, 0]
     nsteps = len(x_amp)
-    U_eff = np.eye(2)
+    U_eff = np.empty((2, 0), dtype=np.complex128)  # Initialize as empty array
 
     for n in range(n_offsets):
         rho = rhoinit
-        Hcs = 2 * np.pi * offsets[n] * iz[:, :, 0]
+        H_chemical_shift = 2 * np.pi * offsets[n] * iz[:, :, 0]
         U_eff_dummy = np.eye(2)
 
         for k in range(nsteps):
-            Hrf = 2 * np.pi * (x_amp[k] * ix[:, :, 0] + y_amp[k] * iy[:, :, 0])
-            Hevo = Hcs + Hrf
-            uevo = calculate_time_propagator(timestep, Hevo)
-            rho = np.dot(uevo, np.dot(rho, np.conj(uevo).T))
-            U_eff_dummy = np.dot(U_eff_dummy, uevo)
+            H_rf = 2 * np.pi * (x_amp[k] * ix[:, :, 0] + y_amp[k] * iy[:, :, 0])
+            H_total = H_chemical_shift + H_rf
+            U_total = calculate_time_propagator(timestep, H_total)
+            rho = np.dot(U_total, np.dot(rho, np.conj(U_total).T))
+            U_eff_dummy = np.dot(U_eff_dummy, U_total)
 
         U_eff = np.concatenate((U_eff, U_eff_dummy), axis=1)
+        # print(f"U_eff shape after offset {n}: {U_eff.shape}")  # Debug statement to check the shape
 
+    # Print the final dimensions of U_eff
+    print(f"Final dimensions of U_eff: {U_eff.shape}")
     np.savetxt(f'../txt/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
+
+# def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
+#     """
+#     Calculate the effective propagator for a given shaped pulse file over a range of offsets.
+
+#     This function performs the following steps:
+#     1. Initializes the spin system.
+#     2. Reads the shaped pulse file to obtain the pulse amplitudes and timestep.
+#     3. Creates an offset grid based on the specified range and number of offsets.
+#     4. Initializes the initial state and preallocates space for the results.
+#     5. Loops over the offset grid to calculate the effective propagator at each offset.
+#     6. For each offset, loops over the time grid to propagate the state using the time propagator.
+#     7. Concatenates the results and saves them to a file.
+
+#     Parameters:
+#     name (str): The name of the file.
+#     offsrange (float): The offset range.
+#     n_offsets (int): The number of offsets.
+
+#     Returns:
+#     None
+#     """
+#     nspins = 1
+#     _, ix, iy, iz, _, _, _, _, _ = basis(nspins)
+
+#     x_amp, y_amp, timestep = read_pulse_file(name)
+#     offsets = np.linspace(-offsrange / 2, offsrange / 2, n_offsets)
+#     rhoinit = iz[:, :, 0]
+#     nsteps = len(x_amp)
+#     U_eff = np.empty((2, 0), dtype=np.complex128)  # Initialize as empty array
+
+#     for n in range(n_offsets):
+#         rho = rhoinit
+#         H_chemical_shift = 2 * np.pi * offsets[n] * iz[:, :, 0]
+#         U_eff_dummy = np.eye(2)
+
+#         for k in range(nsteps):
+#             H_rf = 2 * np.pi * (x_amp[k] * ix[:, :, 0] + y_amp[k] * iy[:, :, 0])  # Fixed line
+#             H_total = H_chemical_shift + H_rf
+#             U_total = calculate_time_propagator(timestep, H_total)
+#             rho = np.dot(U_total, np.dot(rho, np.conj(U_total).T))
+#             U_eff_dummy = np.dot(U_eff_dummy, U_total)
+
+#         if n > 0:  # Skip the first U_eff_dummy
+#             U_eff = np.concatenate((U_eff, U_eff_dummy), axis=1)
+
+#     # Print the dimensions of U_eff
+#     print(f"Dimensions of U_eff: {U_eff.shape}")
+#     np.savetxt(f'../txt/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
+
+# def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
+#     """
+#     Calculate the effective propagator for a given shaped pulse file over a range of offsets.
+
+#     This function performs the following steps:
+#     1. Initializes the spin system.
+#     2. Reads the shaped pulse file to obtain the pulse amplitudes and timestep.
+#     3. Creates an offset grid based on the specified range and number of offsets.
+#     4. Initializes the initial state and preallocates space for the results.
+#     5. Loops over the offset grid to calculate the effective propagator at each offset.
+#     6. For each offset, loops over the time grid to propagate the state using the time propagator.
+#     7. Concatenates the results and saves them to a file.
+
+#     Parameters:
+#     name (str): The name of the file.
+#     offsrange (float): The offset range.
+#     n_offsets (int): The number of offsets.
+
+#     Returns:
+#     None
+#     """
+#     nspins = 1
+#     _, ix, iy, iz, _, _, _, _, _ = basis(nspins)
+
+#     x_amp, y_amp, timestep = read_pulse_file(name)
+#     offsets = np.linspace(-offsrange / 2, offsrange / 2, n_offsets)
+#     rhoinit = iz[:, :, 0]
+#     nsteps = len(x_amp)
+#     U_eff = np.eye(2)
+
+#     for n in range(n_offsets):
+#         rho = rhoinit
+#         H_chemical_shift = 2 * np.pi * offsets[n] * iz[:, :, 0]
+#         U_eff_dummy = np.eye(2)
+
+#         for k in range(nsteps):
+#             H_rf = 2 * np.pi * (x_amp[k] * ix[:, :, 0] + y_amp[k] * iy[:, :, 0])
+#             H_total = H_chemical_shift + H_rf
+#             U_total = calculate_time_propagator(timestep, H_total)
+#             rho = np.dot(U_total, np.dot(rho, np.conj(U_total).T))
+#             U_eff_dummy = np.dot(U_eff_dummy, U_total)
+
+#         U_eff = np.concatenate((U_eff, U_eff_dummy), axis=1)
+#         print(U_eff.shape)
+
+#     np.savetxt(f'../txt/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
 
 def calculate_transfer_function(rho: np.ndarray, operator: np.ndarray) -> float:
     """
@@ -108,7 +210,7 @@ def calculate_final_states(name: str, n_offsets: int):
     nspins = 1
     _, ix, iy, iz, _, _, _, _, _ = basis(nspins)
 
-    U = np.loadtxt(f'figures/offset/{name}_u.txt', dtype=np.complex128)
+    U = np.loadtxt(f'../txt/{name}_u.txt', dtype=np.complex128)
     
     M_xx, M_xy, M_xz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
     M_yx, M_yy, M_yz = np.zeros(n_offsets), np.zeros(n_offsets), np.zeros(n_offsets)
@@ -168,9 +270,9 @@ def calculate_rotation_axis(name: str, offsets: np.ndarray, n_offsets: int):
     n_offsets (int): The number of offsets.
 
     Returns:
-    None
+    tuple: Lists of Lxx, Lyy, Lzz, rx, ry, rz.
     """
-    U = np.loadtxt(f'figures/offset/{name}_u.txt', dtype=np.complex128)
+    U = np.loadtxt(f'../txt/{name}_u.txt', dtype=np.complex128)
 
     a = U[0, 0::2]
     b = U[0, 1::2]
@@ -192,9 +294,11 @@ def calculate_rotation_axis(name: str, offsets: np.ndarray, n_offsets: int):
     rz_new = 2 * omega_half * Lzz_new
 
     Lxx, Lyy, Lzz, rx, ry, rz = Lxx_new.tolist(), Lyy_new.tolist(), Lzz_new.tolist(), rx_new.tolist(), ry_new.tolist(), rz_new.tolist()
-
     axis = np.column_stack((Lxx, Lyy, Lzz))
     np.savetxt(f'../txt/{name}_axis.txt', axis, delimiter='\t', fmt='%.6f')
+
+    return Lxx, Lyy, Lzz, rx, ry, rz
+
 
 # def plot_rotation_axis(name: str, offsets: np.ndarray, rx: list, ry: list, rz: list, Lxx: list, Lyy: list, Lzz: list):
 #     """

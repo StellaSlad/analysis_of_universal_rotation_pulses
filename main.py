@@ -19,7 +19,7 @@ def ensure_directories():
     """
     Ensure that necessary directories exist.
     """
-    dirs = ['txt', 'images', 'images/rotation_axis', 'images/transfer_efficiency']
+    dirs = ['txt', 'images']
     for directory in dirs:
         if not os.path.exists(directory):
             os.makedirs(directory)
