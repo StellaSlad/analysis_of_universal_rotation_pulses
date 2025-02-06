@@ -50,6 +50,7 @@ from lib.basis import basis
 
 # Generate basis matrices for a 2-spin system
 iu, ix, iy, iz, ip, im, ia, ib, norder = basis(2)
+```
 
 ## calculations.py
 
