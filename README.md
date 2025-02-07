@@ -1,13 +1,24 @@
 # Analysis of Broadband Universal Rotation Pulses (for NMR Spectroscopy)
 
-This repo contains different functions for the analysis of broadband Universal Rotation pulses used in NMR spectroscopy. 
-This package was designed for a compact analysis of UR-pulses. However, it can also be used for the analysis of pulses that belong to another pulse class (e. g. BEBOP, xyBEBOP).
+This repository contains different functions for the analysis of broadband Universal Rotation (UR) pulses used in NMR spectroscopy. 
+This package was designed for a compact analysis of BURBOP pulses. However, it can also be used for the analysis of pulses that belong to another pulse class (e. g. BEBOP, xyBEBOP). You can create graphs showing the Magnetisation Transfer Function of the pulses and the total rotation axis for different offsets. 
+The script will analyze all pulses in the DIRECTORY specified. A sample input file showing our pulse format is available.
 
-You can create graphs showing the Transfer Function of the pulses, or the total rotation axis for different offsets. 
-The script will analyze all pulses in the DIRECTORY specified.
+Plotting the rotation vectors for spin with different offsets is an essential step for determining, whether a pulse performs a Univeral Rotation.
+A UR pulse will rotate all the spins about the same axis. Optimised UR pulses show very small deviations from this behaviour.
+Here, you can download BURBOP pulses optimised for different use cases: https://www.ioc.kit.edu/luy/111.php#burbop19f
 
-A sample input file showing our pulse format is available. 
-It is important not to store any other file types in the same directory!
+## Literature on fundamental theoretical concepts, BURBOP pulses and their applications:
+1. Optimal Control of Coupled Spin Dynamics: Design of NMR Pulse Sequences by Gradient Ascent Algorithms:
+https://www.ch.nat.tum.de/fileadmin/w00bzu/ocnmr/pdf/94_GRAPE_JMR_05_.pdf
+2. Broadband 180◦ universal rotation pulses for NMR spectroscopy designed by optimal control:
+<br /> https://arxiv.org/pdf/1111.6647
+4. Exploring the limits of broadband 90° and 180° universal rotation pulses:
+https://www.sciencedirect.com/science/article/abs/pii/S1090780712003126?via%3Dihub
+5. Comprehensive and High-Throughput Exploration of Chemical Space Using Broadband 19F NMR-Based Screening:
+https://onlinelibrary.wiley.com/doi/10.1002/ange.202002463
+
+# Modules
 
 ## main.py
 
