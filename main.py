@@ -40,11 +40,10 @@ def main():
 
     for file_name in pulse_files:
         c.calculate_effective_propagator(file_name, OFFSRANGE, N_OFFSETS)
-        Lxx, Lyy, Lzz, rx, ry, rz = c.calculate_rotation_axis(file_name, OFFSETS, N_OFFSETS)
-        pf.plot_rotation_axis(file_name, OFFSETS, rx, ry, rz, Lxx, Lyy, Lzz)
+        Lxx, Lyy, Lzz, rx, ry, rz = c.calculate_rotation_axis(file_name, OFFSETS, N_OFFSETS)     
         c.calculate_final_states(file_name, N_OFFSETS)
+        pf.plot_rotation_axis(file_name, OFFSETS, rx, ry, rz, Lxx, Lyy, Lzz)
         pf.plot_transfer_efficiency(file_name, OFFSETS)
-        c.calculate_quality_factor(file_name, N_OFFSETS, U_DESIRED)
 
 if __name__ == "__main__":
     main()

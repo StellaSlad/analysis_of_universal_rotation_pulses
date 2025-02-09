@@ -250,7 +250,7 @@ def calculate_quality_factor(name: str, n_offsets: int, desired_propagator: np.n
     Returns:
     None
     """
-    U = np.loadtxt(f'figures/offset/{name}_u.txt', dtype=np.complex128)
+    U = np.loadtxt(f'../txt/{name}_u.txt', dtype=np.complex128)
 
     transfer_efficiency = np.zeros(n_offsets + 1)
     for i in range(n_offsets):
