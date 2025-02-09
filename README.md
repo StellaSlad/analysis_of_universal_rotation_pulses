@@ -8,6 +8,8 @@ Plotting the rotation vectors for spin with different offsets is an essential st
 A UR pulse will rotate all the spins about the same axis. Optimised UR pulses show very small deviations from this behaviour.
 Here, you can download BURBOP pulses optimised for different use cases: https://www.ioc.kit.edu/luy/111.php#burbop19f
 
+A demo notebook is available [here](https://github.com/StellaSlad/analysis_of_universal_rotation_pulses/edit/main/demo.ipynb).
+
 ## Literature on fundamental theoretical concepts, BURBOP pulses and their applications:
 1. Optimal Control of Coupled Spin Dynamics: Design of NMR Pulse Sequences by Gradient Ascent Algorithms:
 https://www.ch.nat.tum.de/fileadmin/w00bzu/ocnmr/pdf/94_GRAPE_JMR_05_.pdf
