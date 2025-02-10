@@ -16,7 +16,7 @@ def read_pulse_file(name: str) -> tuple[np.ndarray, np.ndarray, float]:
     Returns:
     tuple: x_amp, y_amp, timestep
     """
-    pulse = pd.read_table(name, skiprows=4, header=None, names=['Var1', 'Var2', 'Var3'], sep='\s+')
+    pulse = pd.read_table(name, skiprows=4, header=None, names=['Var1', 'Var2', 'Var3'], sep=r'\s+')
     x_amp = pulse['Var1'].astype(float).values
     y_amp = pulse['Var2'].astype(float).values
     timestep = float(pulse['Var3'][0])
@@ -34,8 +34,6 @@ def calculate_time_propagator(timestep: float, Hevo: np.ndarray) -> np.ndarray:
     np.ndarray: The time propagator.
     """
     return scla.expm(-1j * timestep * Hevo)
-
-import numpy as np
 
 def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
     """
@@ -63,7 +61,6 @@ def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
 
     x_amp, y_amp, timestep = read_pulse_file(name)
     offsets = np.linspace(-offsrange / 2, offsrange / 2, n_offsets)
-    print(f"Offsets shape: {offsets.shape}")  # Debug statement to check offsets
     rhoinit = iz[:, :, 0]
     nsteps = len(x_amp)
     U_eff = np.empty((2, 0), dtype=np.complex128)  # Initialize as empty array
@@ -86,102 +83,6 @@ def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
     # Print the final dimensions of U_eff
     print(f"Final dimensions of U_eff: {U_eff.shape}")
     np.savetxt(f'../txt/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
-
-# def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
-#     """
-#     Calculate the effective propagator for a given shaped pulse file over a range of offsets.
-
-#     This function performs the following steps:
-#     1. Initializes the spin system.
-#     2. Reads the shaped pulse file to obtain the pulse amplitudes and timestep.
-#     3. Creates an offset grid based on the specified range and number of offsets.
-#     4. Initializes the initial state and preallocates space for the results.
-#     5. Loops over the offset grid to calculate the effective propagator at each offset.
-#     6. For each offset, loops over the time grid to propagate the state using the time propagator.
-#     7. Concatenates the results and saves them to a file.
-
-#     Parameters:
-#     name (str): The name of the file.
-#     offsrange (float): The offset range.
-#     n_offsets (int): The number of offsets.
-
-#     Returns:
-#     None
-#     """
-#     nspins = 1
-#     _, ix, iy, iz, _, _, _, _, _ = basis(nspins)
-
-#     x_amp, y_amp, timestep = read_pulse_file(name)
-#     offsets = np.linspace(-offsrange / 2, offsrange / 2, n_offsets)
-#     rhoinit = iz[:, :, 0]
-#     nsteps = len(x_amp)
-#     U_eff = np.empty((2, 0), dtype=np.complex128)  # Initialize as empty array
-
-#     for n in range(n_offsets):
-#         rho = rhoinit
-#         H_chemical_shift = 2 * np.pi * offsets[n] * iz[:, :, 0]
-#         U_eff_dummy = np.eye(2)
-
-#         for k in range(nsteps):
-#             H_rf = 2 * np.pi * (x_amp[k] * ix[:, :, 0] + y_amp[k] * iy[:, :, 0])  # Fixed line
-#             H_total = H_chemical_shift + H_rf
-#             U_total = calculate_time_propagator(timestep, H_total)
-#             rho = np.dot(U_total, np.dot(rho, np.conj(U_total).T))
-#             U_eff_dummy = np.dot(U_eff_dummy, U_total)
-
-#         if n > 0:  # Skip the first U_eff_dummy
-#             U_eff = np.concatenate((U_eff, U_eff_dummy), axis=1)
-
-#     # Print the dimensions of U_eff
-#     print(f"Dimensions of U_eff: {U_eff.shape}")
-#     np.savetxt(f'../txt/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
-
-# def calculate_effective_propagator(name: str, offsrange: float, n_offsets: int):
-#     """
-#     Calculate the effective propagator for a given shaped pulse file over a range of offsets.
-
-#     This function performs the following steps:
-#     1. Initializes the spin system.
-#     2. Reads the shaped pulse file to obtain the pulse amplitudes and timestep.
-#     3. Creates an offset grid based on the specified range and number of offsets.
-#     4. Initializes the initial state and preallocates space for the results.
-#     5. Loops over the offset grid to calculate the effective propagator at each offset.
-#     6. For each offset, loops over the time grid to propagate the state using the time propagator.
-#     7. Concatenates the results and saves them to a file.
-
-#     Parameters:
-#     name (str): The name of the file.
-#     offsrange (float): The offset range.
-#     n_offsets (int): The number of offsets.
-
-#     Returns:
-#     None
-#     """
-#     nspins = 1
-#     _, ix, iy, iz, _, _, _, _, _ = basis(nspins)
-
-#     x_amp, y_amp, timestep = read_pulse_file(name)
-#     offsets = np.linspace(-offsrange / 2, offsrange / 2, n_offsets)
-#     rhoinit = iz[:, :, 0]
-#     nsteps = len(x_amp)
-#     U_eff = np.eye(2)
-
-#     for n in range(n_offsets):
-#         rho = rhoinit
-#         H_chemical_shift = 2 * np.pi * offsets[n] * iz[:, :, 0]
-#         U_eff_dummy = np.eye(2)
-
-#         for k in range(nsteps):
-#             H_rf = 2 * np.pi * (x_amp[k] * ix[:, :, 0] + y_amp[k] * iy[:, :, 0])
-#             H_total = H_chemical_shift + H_rf
-#             U_total = calculate_time_propagator(timestep, H_total)
-#             rho = np.dot(U_total, np.dot(rho, np.conj(U_total).T))
-#             U_eff_dummy = np.dot(U_eff_dummy, U_total)
-
-#         U_eff = np.concatenate((U_eff, U_eff_dummy), axis=1)
-#         print(U_eff.shape)
-
-#     np.savetxt(f'../txt/{name}_u.txt', U_eff, delimiter='\t', fmt='%.6f')
 
 def calculate_transfer_function(rho: np.ndarray, operator: np.ndarray) -> float:
     """
@@ -255,7 +156,7 @@ def calculate_quality_factor(name: str, n_offsets: int, desired_propagator: np.n
     transfer_efficiency = np.zeros(n_offsets + 1)
     for i in range(n_offsets):
         effective_propagator = U[0:2, 2 * i:2 * i + 2]
-        transfer_efficiency[i] = np.trace(np.conj(desired_propagator).T @ effective_propagator)
+        transfer_efficiency[i] = np.real(np.trace(np.conj(desired_propagator).T @ effective_propagator))
     
     transfer_efficiency[n_offsets] = np.sum(transfer_efficiency) / n_offsets
     np.savetxt(f'../txt/quality_factor_{name}.txt', transfer_efficiency, delimiter='\t', fmt='%.6f')
