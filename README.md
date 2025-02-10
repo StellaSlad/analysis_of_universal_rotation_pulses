@@ -112,16 +112,6 @@ offsets = np.linspace(-5000, 5000, 101)
 calculate_rotation_axis('pulse_file.txt', offsets, 101)
 ```
 
-  
-### Example plots:
-
-![Universal Rotation Pulse](https://github.com/StellaSlad/analysis_of_univeral_rotation_pulses/blob/main/images/UR.jpg)
-
-This is a universal rotation pulse, because the rotation axes are almost identical for different offsets.
-
-Comment: need to find the original figure for a not-UR pulse (so far, only have a small figute from a word file..)
-(figure discription: This is not a universal rotation pulse, because the rotation axes are different for different offsets.)
-
 ### Planned improvements:
 
 - add function that can read .bruker input files
